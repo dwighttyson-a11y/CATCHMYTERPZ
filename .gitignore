@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+.env.*
+
+# Keep these — they ARE the production "database"
+!public/uploads/
+!public/catalog-config.json

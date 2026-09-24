@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:thesamuraipharmacy.store)",
+      "PowerShell(npm create *)",
+      "Bash(npm run *)",
+      "PowerShell(Start-Process \"http://localhost:5173\")",
+      "PowerShell(Start-Process \"msedge\" -ArgumentList \"http://localhost:5173\")",
+      "WebFetch(domain:www.instagram.com)",
+      "PowerShell(Copy-Item *)",
+      "PowerShell(netstat *)",
+      "Bash(netstat -ano)",
+      "Bash(findstr :5173)",
+      "Bash(grep -i -E \"\\\\.\\(png|jpg|jpeg|gif|webp|svg\\)$\")",
+      "PowerShell(Get-Process *)",
+      "Bash(python3 -c ' *)",
+      "Bash(npx tsc *)",
+      "Bash(dir \"C:\\\\Users\\\\Dwigh\\\\OneDrive\\\\Desktop\\\\Website store - German Online Store\\\\\" 2>/dev/null)",
+      "Bash(file public/towel.jpg public/logo-design.png)",
+      "Bash(identify public/towel.jpg public/logo-design.png)",
+      "Bash(xargs grep *)",
+      "Bash(npm install *)",
+      "Bash(npx vite *)",
+      "Bash(ipconfig)",
+      "Bash(netlify login *)",
+      "Bash(netlify deploy *)",
+      "Bash(netlify sites:delete aesthetic-pudding-d6834d --force)",
+      "Bash(netlify sites:list)",
+      "Bash(netlify sites:delete 03b4141a-a488-40bd-977c-848521d8cb85 --force)",
+      "Bash(netlify unlink *)",
+      "Bash(echo \"# CATCHMYTERPZ\")",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git branch *)",
+      "Bash(git push *)"
+    ]
+  }
+}

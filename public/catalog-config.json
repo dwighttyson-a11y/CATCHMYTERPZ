@@ -1,0 +1,82 @@
+{
+  "overrides": {
+    "prod-1": {
+      "productId": "prod-1",
+      "gramTiers": [
+        {
+          "grams": 500,
+          "price": 2500
+        }
+      ],
+      "galleryItems": [
+        "prod_prod-1_img_1789984353231",
+        "prod_prod-1_img_1789996853676"
+      ]
+    },
+    "prod-2": {
+      "productId": "prod-2",
+      "galleryItems": [
+        "prod_prod-2_img_1789974553329"
+      ],
+      "gramTiers": [
+        {
+          "grams": 500,
+          "price": 5000
+        }
+      ]
+    },
+    "prod-3": {
+      "productId": "prod-3",
+      "galleryItems": [
+        "prod_prod-3_img_1789974573214"
+      ]
+    },
+    "prod-5": {
+      "productId": "prod-5",
+      "galleryItems": [
+        "prod_prod-2_img_1789974553329"
+      ],
+      "isPremium": true
+    },
+    "prod-7": {
+      "productId": "prod-7",
+      "galleryItems": [
+        "prod_prod-2_img_1789974553329"
+      ]
+    }
+  },
+  "sections": [
+    {
+      "id": "s-static-hash",
+      "slug": "static-hash",
+      "label": "STATIC HASH",
+      "colour": "#7C3AED",
+      "textDark": false,
+      "desc": "Pressed pollen perfection",
+      "order": 0
+    },
+    {
+      "id": "s-wpff",
+      "slug": "wpff",
+      "label": "WPFF",
+      "colour": "#A8CE2C",
+      "textDark": true,
+      "desc": "Full-flavour flower power",
+      "order": 1
+    },
+    {
+      "id": "s-bubble-hash",
+      "slug": "bubble-hash",
+      "label": "BUBBLE HASH",
+      "colour": "#C0567A",
+      "textDark": false,
+      "desc": "Ice-water extracted purity",
+      "order": 2
+    }
+  ],
+  "premiumSlots": {
+    "slot1": "prod-1",
+    "slot2": "prod-5",
+    "slot3": "prod-7"
+  }
+}

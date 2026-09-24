@@ -1,0 +1,41 @@
+{
+  "v": 1,
+  "items": [
+    {
+      "id": "prod_prod-1_img_1789996853676",
+      "url": "/uploads/prod_prod-1_img_1789996853676.jpg",
+      "filename": "prod_prod-1_img_1789996853676.jpg",
+      "mimeType": "image/jpeg",
+      "size": 102190,
+      "uploadedAt": 1789996853834,
+      "type": "image"
+    },
+    {
+      "id": "prod_prod-1_img_1789984353231",
+      "url": "/uploads/prod_prod-1_img_1789984353231.jpg",
+      "filename": "prod_prod-1_img_1789984353231.jpg",
+      "mimeType": "image/jpeg",
+      "size": 70543,
+      "uploadedAt": 1789984353372,
+      "type": "image"
+    },
+    {
+      "id": "prod_prod-2_img_1789974553329",
+      "url": "/uploads/prod_prod-2_img_1789974553329.jpg",
+      "filename": "prod_prod-2_img_1789974553329.jpg",
+      "mimeType": "image/jpeg",
+      "size": 70543,
+      "uploadedAt": 1789974553449,
+      "type": "image"
+    },
+    {
+      "id": "prod_prod-1_img_1789926130120",
+      "url": "/uploads/prod_prod-1_img_1789926130120.jpg",
+      "filename": "prod_prod-1_img_1789926130120.jpg",
+      "mimeType": "image/jpeg",
+      "size": 102190,
+      "uploadedAt": 1789926130237,
+      "type": "image"
+    }
+  ]
+}

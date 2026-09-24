@@ -1,0 +1,45 @@
+{
+  "prod-1": {
+    "productId": "prod-1",
+    "gramTiers": [
+      {
+        "grams": 500,
+        "price": 2500
+      }
+    ],
+    "galleryItems": [
+      "prod_prod-1_img_1789984353231"
+    ]
+  },
+  "prod-2": {
+    "productId": "prod-2",
+    "galleryItems": [
+      "prod_prod-2_img_1789974553329"
+    ],
+    "gramTiers": [
+      {
+        "grams": 500,
+        "price": 5000
+      }
+    ]
+  },
+  "prod-3": {
+    "productId": "prod-3",
+    "galleryItems": [
+      "prod_prod-3_img_1789974573214"
+    ]
+  },
+  "prod-5": {
+    "productId": "prod-5",
+    "galleryItems": [
+      "prod_prod-2_img_1789974553329"
+    ],
+    "isPremium": true
+  },
+  "prod-7": {
+    "productId": "prod-7",
+    "galleryItems": [
+      "prod_prod-2_img_1789974553329"
+    ]
+  }
+}
