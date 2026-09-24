@@ -1,3 +1,0 @@
-;/*FB_PKG_DELIM*/
-
-__d("ScreenTimeGetCurrentTimestamp",["DateConsts"],(function(t,n,r,o,a,i,l){"use strict";function e(){var e=new Date;return Math.floor(e.getTime()/o("DateConsts").MS_PER_SEC)}function s(){var e=new Date;return Math.floor(e.getTime())}function u(){return new Date}l.getCurrentTimestamp=e,l.getCurrentTimestampMs=s,l.getCurrentDate=u}),98);

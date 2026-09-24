@@ -3,6 +3,11 @@ dist/
 .env
 .env.*
 
+# Saved web pages / junk
+(2) Instagram.html
+(2) Instagram_files/
+Bing Videos_files/
+
 # Keep these — they ARE the production "database"
 !public/uploads/
 !public/catalog-config.json
