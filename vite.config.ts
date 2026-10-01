@@ -234,15 +234,17 @@ const CATALOG_CONFIG_FILE = path.resolve('public', 'catalog-config.json')
 const CATALOG_LEGACY_FILE = path.resolve('catalog-overrides.json')   // migration source
 
 interface CatalogConfig {
-  overrides:    Record<string, unknown>
-  sections:     unknown[]
-  premiumSlots: { slot1: string | null; slot2: string | null; slot3: string | null }
+  overrides:      Record<string, unknown>
+  sections:       unknown[]
+  premiumSlots:   { slot1: string | null; slot2: string | null; slot3: string | null }
+  customProducts: unknown[]
 }
 
 const DEFAULT_CATALOG_CONFIG: CatalogConfig = {
-  overrides:    {},
-  sections:     [],
-  premiumSlots: { slot1: null, slot2: null, slot3: null },
+  overrides:      {},
+  sections:       [],
+  premiumSlots:   { slot1: null, slot2: null, slot3: null },
+  customProducts: [],
 }
 
 function loadCatalogConfig(): CatalogConfig {
@@ -315,6 +317,19 @@ async function handleCatalog(req: IncomingMessage, res: ServerResponse): Promise
       const body = JSON.parse((await readBody(req, 100_000)).toString()) as CatalogConfig['premiumSlots']
       const cfg = loadCatalogConfig()
       cfg.premiumSlots = body
+      saveCatalogConfig(cfg)
+      broadcastCatalog()
+      jsonReply(res, 200, { ok: true })
+    } catch (e) { jsonReply(res, 500, { error: String(e) }) }
+    return
+  }
+
+  // Custom products
+  if (req.method === 'POST' && route === '/custom-products') {
+    try {
+      const body = JSON.parse((await readBody(req, 1_000_000)).toString()) as unknown[]
+      const cfg = loadCatalogConfig()
+      cfg.customProducts = body
       saveCatalogConfig(cfg)
       broadcastCatalog()
       jsonReply(res, 200, { ok: true })

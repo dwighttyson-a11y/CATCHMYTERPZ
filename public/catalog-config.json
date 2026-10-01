@@ -6,11 +6,16 @@
         {
           "grams": 500,
           "price": 2500
+        },
+        {
+          "grams": 1000,
+          "price": 5000
         }
       ],
       "galleryItems": [
         "prod_prod-1_img_1789984353231",
-        "prod_prod-1_img_1789996853676"
+        "prod_prod-1_img_1789996853676",
+        "lib_1790271097553_mgspp"
       ]
     },
     "prod-2": {
@@ -28,7 +33,7 @@
     "prod-3": {
       "productId": "prod-3",
       "galleryItems": [
-        "prod_prod-3_img_1789974573214"
+        "prod_prod-3_img_1790864141175"
       ]
     },
     "prod-5": {
@@ -47,15 +52,6 @@
   },
   "sections": [
     {
-      "id": "s-static-hash",
-      "slug": "static-hash",
-      "label": "STATIC HASH",
-      "colour": "#7C3AED",
-      "textDark": false,
-      "desc": "Pressed pollen perfection",
-      "order": 0
-    },
-    {
       "id": "s-wpff",
       "slug": "wpff",
       "label": "WPFF",
@@ -65,6 +61,15 @@
       "order": 1
     },
     {
+      "id": "s-static-hash",
+      "slug": "static-hash",
+      "label": "STATIC HASH",
+      "colour": "#7C3AED",
+      "textDark": false,
+      "desc": "Pressed pollen perfection",
+      "order": 0
+    },
+    {
       "id": "s-bubble-hash",
       "slug": "bubble-hash",
       "label": "BUBBLE HASH",
@@ -72,11 +77,21 @@
       "textDark": false,
       "desc": "Ice-water extracted purity",
       "order": 2
+    },
+    {
+      "slug": "cali-flower",
+      "label": "CALI FLOWER",
+      "colour": "#7C3AED",
+      "textDark": false,
+      "desc": "",
+      "id": "s-1790864342798",
+      "order": 3
     }
   ],
   "premiumSlots": {
     "slot1": "prod-1",
     "slot2": "prod-5",
     "slot3": "prod-7"
-  }
+  },
+  "customProducts": []
 }

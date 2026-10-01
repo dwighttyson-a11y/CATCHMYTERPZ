@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import {
   X, CheckCircle, AlertCircle,
   Search, Edit2, Star, ChevronDown, Images, Plus, Minus,
@@ -9,6 +9,7 @@ import { useProductImages } from '../../context/ProductImageContext'
 import { useMediaUpload } from '../../context/MediaContext'
 import { useCatalog } from '../../context/CatalogContext'
 import { useMediaLibrary } from '../../context/MediaLibraryContext'
+import { useToast } from '../components/Toast'
 import type { Product } from '../../types'
 import type { ProductOverride, GramTier } from '../../context/CatalogContext'
 import type { MediaItem } from '../../context/MediaLibraryContext'
@@ -84,8 +85,9 @@ const BADGE_OPTIONS = ['', 'Bestseller', 'Neu', 'Sale', 'Limitiert', 'Empfohlen'
 export function AdminProducts() {
   const { getProductImage }                                  = useProductImages()
   const { uploadFromDataUrl, uploadBinary }                  = useMediaUpload()
-  const { sections, productOverrides, setProductOverride, clearProductOverride, premiumSlots, setPremiumSlot } = useCatalog()
+  const { sections, productOverrides, setProductOverride, clearProductOverride, premiumSlots, setPremiumSlot, resolvedProducts, customProducts, addCustomProduct, deleteCustomProduct } = useCatalog()
   const { media, isLoading: libLoading }                     = useMediaLibrary()
+  const toast                                                = useToast()
 
   const [query,         setQuery]         = useState('')
   const [sectionFilter, setSectionFilter] = useState('all')
@@ -93,6 +95,11 @@ export function AdminProducts() {
   const [inputError,    setInputError]    = useState('')
   const [successId,     setSuccessId]     = useState<string | null>(null)
   const [libraryOpen,   setLibraryOpen]   = useState(false)
+  const [createOpen,    setCreateOpen]    = useState(false)
+  const [createName,    setCreateName]    = useState('')
+  const [createDesc,    setCreateDesc]    = useState('')
+  const [createSection, setCreateSection] = useState('')
+  const [createError,   setCreateError]   = useState('')
 
   const imgInputRef  = useRef<HTMLInputElement>(null)
   const vidInputRef  = useRef<HTMLInputElement>(null)
@@ -101,19 +108,18 @@ export function AdminProducts() {
 
   // ── Filtered product list ──────────────────────────────────────────────────
 
-  const filtered = BASE_PRODUCTS.filter(p => {
-    const ov           = productOverrides[p.id]
-    const name         = ov?.name ?? p.name
-    const matchQuery   = name.toLowerCase().includes(query.toLowerCase())
-    const effectiveSec = ov?.sectionSlug ?? p.collection
-    const matchSection = sectionFilter === 'all' || effectiveSec === sectionFilter
+  const customProductIds = useMemo(() => new Set(customProducts.map(c => c.id)), [customProducts])
+
+  const filtered = resolvedProducts.filter(p => {
+    const matchQuery   = p.name.toLowerCase().includes(query.toLowerCase())
+    const matchSection = sectionFilter === 'all' || p.collection === sectionFilter
     return matchQuery && matchSection
   })
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
-  const effectiveName = (p: Product) => productOverrides[p.id]?.name ?? p.name
-  const effectiveSec  = (p: Product) => productOverrides[p.id]?.sectionSlug ?? p.collection
+  const effectiveName = (p: Product) => p.name
+  const effectiveSec  = (p: Product) => p.collection
 
   const currentImgSrc = (p: Product) => {
     const galleryIds = productOverrides[p.id]?.galleryItems ?? []
@@ -142,7 +148,8 @@ export function AdminProducts() {
     setProductOverride(edit.product.id, { galleryItems: newIds })
     setSuccessId(edit.product.id)
     setTimeout(() => setSuccessId(null), 2000)
-  }, [edit, setProductOverride])
+    toast.show('Gallery saved')
+  }, [edit, setProductOverride, toast])
 
   // ── Gallery upload: image ──────────────────────────────────────────────────
 
@@ -264,6 +271,22 @@ export function AdminProducts() {
     setSuccessId(p.id)
     setTimeout(() => setSuccessId(null), 3000)
     setEdit(prev => prev ? { ...prev, detailsDirty: false } : prev)
+    toast.show('Product saved')
+  }
+
+  // ── Create product ────────────────────────────────────────────────────────
+
+  const handleCreate = () => {
+    if (!createName.trim()) { setCreateError('Product name is required'); return }
+    const slug = createSection || sections[0]?.slug
+    if (!slug) { setCreateError('Please create a category first'); return }
+    addCustomProduct({ name: createName.trim(), shortDescription: createDesc.trim(), collection: slug })
+    setCreateOpen(false)
+    setCreateName('')
+    setCreateDesc('')
+    setCreateSection('')
+    setCreateError('')
+    toast.show('Product created')
   }
 
   // ── Styles ────────────────────────────────────────────────────────────────
@@ -321,9 +344,19 @@ export function AdminProducts() {
           Products
         </h1>
         <p style={{ color: '#9080B4', fontSize: '0.8rem', margin: 0 }}>
-          {BASE_PRODUCTS.length} products · {withGallery} with gallery media ·{' '}
+          {BASE_PRODUCTS.length + customProducts.length} products · {withGallery} with gallery media ·{' '}
           {Object.keys(productOverrides).length} with overrides
         </p>
+      </div>
+
+      {/* Add Product */}
+      <div style={{ marginBottom: 20 }}>
+        <button
+          onClick={() => { setCreateSection(sections[0]?.slug ?? ''); setCreateOpen(true) }}
+          style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 18px', background: 'linear-gradient(135deg, #7C3AED, #5B21B6)', border: '1px solid rgba(124,58,237,0.4)', color: '#fff', fontSize: '0.65rem', fontWeight: 900, letterSpacing: '0.18em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'inherit' }}
+        >
+          <Plus size={13} /> Add New Product
+        </button>
       </div>
 
       {/* Premium Selection Management */}
@@ -338,7 +371,7 @@ export function AdminProducts() {
           {([1, 2, 3] as const).map(slot => {
             const slotKey   = `slot${slot}` as keyof typeof premiumSlots
             const productId = premiumSlots[slotKey]
-            const product   = productId ? BASE_PRODUCTS.find(p => p.id === productId) : null
+            const product   = productId ? resolvedProducts.find(p => p.id === productId) : null
             const name      = product ? (productOverrides[product.id]?.name ?? product.name) : null
             return (
               <div key={slot} style={{ background: '#1A1628', border: '1px solid rgba(245,158,11,0.2)', padding: '10px 10px 12px' }}>
@@ -369,9 +402,9 @@ export function AdminProducts() {
                     onFocus={focusBorder} onBlur={blurBorder}
                   >
                     <option value="">— None —</option>
-                    {BASE_PRODUCTS.map(p => (
+                    {resolvedProducts.map(p => (
                       <option key={p.id} value={p.id}>
-                        {productOverrides[p.id]?.name ?? p.name}
+                        {p.name}
                       </option>
                     ))}
                   </select>
@@ -490,6 +523,11 @@ export function AdminProducts() {
                       Edited
                     </span>
                   )}
+                  {customProductIds.has(product.id) && (
+                    <span style={{ fontSize: '0.5rem', fontWeight: 800, letterSpacing: '0.1em', color: '#06B6D4', background: 'rgba(6,182,212,0.08)', border: '1px solid rgba(6,182,212,0.2)', padding: '1px 6px' }}>
+                      Custom
+                    </span>
+                  )}
                   {[premiumSlots.slot1, premiumSlots.slot2, premiumSlots.slot3].includes(product.id) && (
                     <span style={{ fontSize: '0.5rem', fontWeight: 800, letterSpacing: '0.1em', color: '#F59E0B', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', padding: '1px 6px' }}>
                       <Star size={9} style={{ display: 'inline', marginRight: 2 }} />Premium
@@ -512,6 +550,14 @@ export function AdminProducts() {
                 >
                   <Images size={11} /> Gallery
                 </button>
+                {customProductIds.has(product.id) && (
+                  <button
+                    onClick={() => { deleteCustomProduct(product.id); toast.show('Product deleted') }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 12px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: 'rgba(239,68,68,0.7)', fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
+                  >
+                    <Trash2 size={11} /> Delete
+                  </button>
+                )}
               </div>
             </div>
           )
@@ -881,6 +927,65 @@ export function AdminProducts() {
           </div>
         </div>
       )}
+      {/* ── Create Product Modal ── */}
+      {createOpen && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(12,9,25,0.9)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', display: 'flex', alignItems: 'flex-end', zIndex: 200 }}
+          onClick={e => { if (e.target === e.currentTarget) setCreateOpen(false) }}
+        >
+          <div style={{ width: '100%', maxWidth: 480, margin: '0 auto', background: '#1A1628', border: '1px solid rgba(124,58,237,0.3)', boxShadow: '0 -20px 60px rgba(0,0,0,0.5)', borderRadius: '4px 4px 0 0', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid #2D2550' }}>
+              <div>
+                <div style={{ fontSize: '0.55rem', fontWeight: 800, letterSpacing: '0.2em', color: '#A8CE2C', textTransform: 'uppercase', marginBottom: 2 }}>New Product</div>
+                <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#F0EBF8' }}>Add to Catalog</div>
+              </div>
+              <button onClick={() => setCreateOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9080B4', display: 'flex', padding: 4 }}>
+                <X size={19} />
+              </button>
+            </div>
+            <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {createError && (
+                <div style={{ padding: '8px 12px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#FCA5A5', fontSize: '0.75rem' }}>
+                  {createError}
+                </div>
+              )}
+              <div>
+                <label style={s.label}>Product Name *</label>
+                <input
+                  type="text" value={createName} onChange={e => setCreateName(e.target.value)}
+                  placeholder="e.g. Moroccan Black" style={s.input}
+                  onFocus={focusBorder} onBlur={blurBorder}
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label style={s.label}>Short Description</label>
+                <textarea
+                  value={createDesc} onChange={e => setCreateDesc(e.target.value)}
+                  placeholder="A short product description…" style={{ ...s.textarea, minHeight: 60 }}
+                  onFocus={focusBorder} onBlur={blurBorder}
+                />
+              </div>
+              <div>
+                <label style={s.label}>Category</label>
+                <div style={{ position: 'relative' }}>
+                  <select value={createSection} onChange={e => setCreateSection(e.target.value)} style={s.select} onFocus={focusBorder} onBlur={blurBorder}>
+                    {sections.map(sec => <option key={sec.id} value={sec.slug}>{sec.label}</option>)}
+                  </select>
+                  <ChevronDown size={13} color="#9080B4" style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                </div>
+              </div>
+              <button
+                onClick={handleCreate}
+                style={{ width: '100%', padding: '13px', background: 'linear-gradient(135deg, #7C3AED, #5B21B6)', border: '1px solid rgba(124,58,237,0.4)', color: '#fff', fontSize: '0.68rem', fontWeight: 900, letterSpacing: '0.18em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+              >
+                <Plus size={14} /> Create Product
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 

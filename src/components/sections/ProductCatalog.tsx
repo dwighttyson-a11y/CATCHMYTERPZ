@@ -35,6 +35,7 @@ function ProductCard({ product }: { product: Product }) {
     .map(id => allMedia.find(m => m.id === id && m.type === 'image'))
     .filter((m): m is NonNullable<typeof m> => m !== undefined)
     .map(m => m.url)
+  const hasVideo = galleryIds.some(id => allMedia.find(m => m.id === id && m.type === 'video'))
 
   const fallback   = getProductImage(product.id) ?? product.images[0]
   const images     = galleryImages.length > 0 ? galleryImages : (fallback ? [fallback] : [])
@@ -95,6 +96,27 @@ function ProductCard({ product }: { product: Product }) {
           className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
           style={{ background: 'linear-gradient(to top, rgba(12,9,25,0.82) 0%, transparent 52%)' }}
         />
+
+        {/* Video indicator badge */}
+        {hasVideo && (
+          <Link
+            to={`/products/${product.slug}`}
+            onClick={e => e.stopPropagation()}
+            style={{
+              position: 'absolute', top: 8, right: 8, zIndex: 11,
+              display: 'flex', alignItems: 'center', gap: 4,
+              background: 'rgba(12,9,25,0.88)', backdropFilter: 'blur(6px)',
+              border: `1px solid ${colour}66`,
+              padding: '3px 8px',
+              fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.16em',
+              color: colour,
+              textDecoration: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            ▶ VIDEO
+          </Link>
+        )}
 
         {/* Prev arrow */}
         {total > 1 && safeIndex > 0 && showArrows && (

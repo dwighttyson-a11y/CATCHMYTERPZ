@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import {
   Plus, Trash2, X, CheckCircle, ChevronUp, ChevronDown,
-  Edit2, FolderOpen,
+  Edit2, FolderOpen, Save,
 } from 'lucide-react'
 import { useCatalog } from '../../context/CatalogContext'
+import { useToast } from '../components/Toast'
 import type { CatalogSection } from '../../context/CatalogContext'
 
 // Preset colour swatches for new/edited sections
@@ -41,10 +42,12 @@ function fromSection(sec: CatalogSection): ModalState {
 
 export function AdminCategories() {
   const { sections, addSection, updateSection, deleteSection, moveSectionUp, moveSectionDown, getProductsForSection } = useCatalog()
+  const toast = useToast()
 
-  const [modal,       setModal]       = useState<ModalState | null>(null)
+  const [modal,         setModal]         = useState<ModalState | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
-  const [successId,   setSuccessId]   = useState<string | null>(null)
+  const [successId,     setSuccessId]     = useState<string | null>(null)
+  const [saved,         setSaved]         = useState(false)
 
   const openAdd  = () => setModal(emptyModal())
   const openEdit = (sec: CatalogSection) => setModal(fromSection(sec))
@@ -60,6 +63,7 @@ export function AdminCategories() {
         textDark: modal.textDark,
         desc: modal.desc.trim(),
       })
+      toast.show('Section created')
     } else if (modal.mode === 'edit' && modal.id) {
       updateSection(modal.id, {
         label: modal.label.trim().toUpperCase(),
@@ -69,6 +73,7 @@ export function AdminCategories() {
       })
       setSuccessId(modal.id)
       setTimeout(() => setSuccessId(null), 2500)
+      toast.show('Section updated')
     }
     close()
   }
@@ -76,6 +81,20 @@ export function AdminCategories() {
   const handleDelete = (id: string) => {
     deleteSection(id)
     setDeleteConfirm(null)
+    toast.show('Section deleted')
+  }
+
+  const handleSaveAll = async () => {
+    try {
+      await fetch('/api/catalog/sections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sections),
+      })
+    } catch { /* ignore in production */ }
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2500)
+    toast.show('Categories saved')
   }
 
   const s = {
@@ -117,19 +136,37 @@ export function AdminCategories() {
             {sections.length} sections · displayed on main page in this order
           </p>
         </div>
-        <button
-          onClick={openAdd}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 7,
-            padding: '10px 16px', flexShrink: 0,
-            background: 'linear-gradient(135deg, #A8CE2C, #7AAB1E)',
-            border: '1px solid rgba(168,206,44,0.4)',
-            color: '#0C0919', fontSize: '0.65rem', fontWeight: 900, letterSpacing: '0.15em',
-            textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'inherit',
-          }}
-        >
-          <Plus size={14} /> New Section
-        </button>
+        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+          <button
+            onClick={handleSaveAll}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 7,
+              padding: '10px 16px',
+              background: saved ? 'rgba(168,206,44,0.15)' : 'rgba(45,37,80,0.6)',
+              border: saved ? '1px solid rgba(168,206,44,0.5)' : '1px solid #2D2550',
+              color: saved ? '#A8CE2C' : '#9080B4',
+              fontSize: '0.65rem', fontWeight: 900, letterSpacing: '0.15em',
+              textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'inherit',
+              transition: 'all 0.3s',
+            }}
+          >
+            {saved ? <CheckCircle size={14} /> : <Save size={14} />}
+            {saved ? 'Saved' : 'Save'}
+          </button>
+          <button
+            onClick={openAdd}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 7,
+              padding: '10px 16px',
+              background: 'linear-gradient(135deg, #A8CE2C, #7AAB1E)',
+              border: '1px solid rgba(168,206,44,0.4)',
+              color: '#0C0919', fontSize: '0.65rem', fontWeight: 900, letterSpacing: '0.15em',
+              textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            <Plus size={14} /> New Section
+          </button>
+        </div>
       </div>
 
       {/* Explanation banner */}

@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, Package, FolderOpen, Settings, LogOut, ChevronLeft, Images } from 'lucide-react'
 import { useAdminAuth } from '../context/AdminAuthContext'
 import { clearAdminSession } from '../auth/adminAuth'
+import { ToastProvider } from './Toast'
 
 const NAV = [
   { to: '/admin',            label: 'Dashboard',  icon: LayoutDashboard, end: true  },
@@ -51,6 +52,7 @@ export function AdminLayout() {
   }
 
   return (
+    <ToastProvider>
     <>
       <style>{`
         .admin-nav-link { transition: color 0.15s, background 0.15s; }
@@ -287,5 +289,6 @@ export function AdminLayout() {
         }
       `}</style>
     </>
+    </ToastProvider>
   )
 }

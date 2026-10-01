@@ -21,6 +21,15 @@ export interface GramTier {
   price: number
 }
 
+export interface CustomProduct {
+  id: string
+  name: string
+  shortDescription: string
+  collection: string
+  badge?: string
+  gramTiers?: GramTier[]
+}
+
 export interface PremiumSlots {
   slot1: string | null
   slot2: string | null
@@ -60,6 +69,11 @@ interface CatalogContextValue {
   // Resolved data (base + overrides merged)
   resolvedProducts: Product[]
   getProductsForSection: (slug: string) => Product[]
+
+  // Custom products (admin-created)
+  customProducts: CustomProduct[]
+  addCustomProduct: (data: Omit<CustomProduct, 'id'>) => void
+  deleteCustomProduct: (id: string) => void
 
   // Premium Selection slots (3 independent slots)
   premiumSlots: PremiumSlots
@@ -159,14 +173,24 @@ function persistPremiumSlots(s: PremiumSlots): void {
   }).catch(() => { /* ignore */ })
 }
 
+function persistCustomProducts(cp: CustomProduct[]): void {
+  if (import.meta.env.PROD) return
+  fetch('/api/catalog/custom-products', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(cp),
+  }).catch(() => { /* ignore */ })
+}
+
 // ─── Context ──────────────────────────────────────────────────────────────────
 
 const CatalogContext = createContext<CatalogContextValue | null>(null)
 
 export function CatalogProvider({ children }: { children: React.ReactNode }) {
-  const [sections,     setSections]     = useState<CatalogSection[]>(loadSections)
-  const [overrides,    setOverrides]    = useState<Record<string, ProductOverride>>({})
-  const [premiumSlots, setPremiumSlots] = useState<PremiumSlots>(loadPremiumSlots)
+  const [sections,           setSections]           = useState<CatalogSection[]>(loadSections)
+  const [overrides,          setOverrides]          = useState<Record<string, ProductOverride>>({})
+  const [premiumSlots,       setPremiumSlots]       = useState<PremiumSlots>(loadPremiumSlots)
+  const [customProductsList, setCustomProductsList] = useState<CustomProduct[]>([])
 
   // Always-current snapshot of overrides — lets callbacks persist without stale closure issues.
   const overridesRef    = useRef<Record<string, ProductOverride>>({})
@@ -181,10 +205,11 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
       // Production: read everything from the committed static file — no server needed
       fetch('/catalog-config.json', { cache: 'no-store' })
         .then(r => r.ok ? r.json() : null)
-        .then((data: { overrides?: Record<string, ProductOverride>; sections?: CatalogSection[]; premiumSlots?: PremiumSlots } | null) => {
+        .then((data: { overrides?: Record<string, ProductOverride>; sections?: CatalogSection[]; premiumSlots?: PremiumSlots; customProducts?: CustomProduct[] } | null) => {
           if (!data) return
-          if (data.overrides)               setOverrides(data.overrides)
-          if (data.sections?.length)        setSections(data.sections)
+          if (data.overrides)                setOverrides(data.overrides)
+          if (data.sections?.length)         setSections(data.sections)
+          if (data.customProducts?.length)   setCustomProductsList(data.customProducts)
           if (data.premiumSlots) {
             setPremiumSlots(prev => ({
               slot1: data.premiumSlots!.slot1 ?? prev.slot1,
@@ -213,10 +238,11 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
     // On mount: load full config so sections + premiumSlots reflect server state
     fetch('/api/catalog/config', { cache: 'no-store' })
       .then(r => r.ok ? r.json() : null)
-      .then((data: { overrides?: Record<string, ProductOverride>; sections?: CatalogSection[]; premiumSlots?: PremiumSlots } | null) => {
+      .then((data: { overrides?: Record<string, ProductOverride>; sections?: CatalogSection[]; premiumSlots?: PremiumSlots; customProducts?: CustomProduct[] } | null) => {
         if (!data) return
-        if (data.overrides)        setOverrides(data.overrides)
-        if (data.sections?.length) setSections(data.sections)
+        if (data.overrides)               setOverrides(data.overrides)
+        if (data.sections?.length)        setSections(data.sections)
+        if (data.customProducts?.length)  setCustomProductsList(data.customProducts)
         if (data.premiumSlots) {
           setPremiumSlots(prev => ({
             slot1: data.premiumSlots!.slot1 ?? prev.slot1,
@@ -244,6 +270,7 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => { saveSections(sections); persistSections(sections) }, [sections])
   useEffect(() => { savePremiumSlots(premiumSlots); persistPremiumSlots(premiumSlots) }, [premiumSlots])
+  useEffect(() => { persistCustomProducts(customProductsList) }, [customProductsList])
 
   // Sorted sections
   const sortedSections = useMemo(
@@ -255,7 +282,7 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
   // gramTiers from the admin are the ONLY source of variant/pricing options —
   // base product variants are always cleared so nothing hardcoded can surface.
   const resolvedProducts = useMemo<Product[]>(() => {
-    return BASE_PRODUCTS.map(p => {
+    const baseResolved = BASE_PRODUCTS.map(p => {
       const ov = overrides[p.id]
       const resolved: Product = {
         ...p,
@@ -269,8 +296,6 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
         ...(ov?.inventory        !== undefined && { inventory: ov.inventory }),
       }
 
-      // Build variants exclusively from admin-entered gramTiers.
-      // If no gramTiers are saved, variants is empty — nothing is shown.
       const tiers = ov?.gramTiers ?? []
       resolved.variants = tiers.length > 0
         ? [{
@@ -288,7 +313,45 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
 
       return resolved
     })
-  }, [overrides])
+
+    const customResolved: Product[] = customProductsList.map(cp => {
+      const ov    = overrides[cp.id]
+      const tiers = ov?.gramTiers ?? cp.gramTiers ?? []
+      return {
+        id:               cp.id,
+        slug:             cp.id,
+        name:             ov?.name             ?? cp.name,
+        shortDescription: ov?.shortDescription ?? cp.shortDescription,
+        description:      ov?.shortDescription ?? cp.shortDescription,
+        specifications:   {},
+        price:            tiers[0]?.price ?? 0,
+        images:           [],
+        category:         'supplements' as const,
+        collection:       ov?.sectionSlug ?? cp.collection,
+        variants:         tiers.length > 0
+          ? [{
+              name:    'Menge',
+              type:    'size' as const,
+              options: tiers.map((tier, i) => ({
+                id:            `${cp.id}-tier-${i}`,
+                name:          `${tier.grams}g`,
+                value:         `${tier.grams}g`,
+                available:     true,
+                priceModifier: tier.price,
+              })),
+            }]
+          : [],
+        inventory:   99,
+        rating:      0,
+        reviewCount: 0,
+        badge:       (ov?.badge ?? cp.badge) as Product['badge'] | undefined,
+        featured:    false,
+        bestSeller:  false,
+      }
+    })
+
+    return [...baseResolved, ...customResolved]
+  }, [overrides, customProductsList])
 
   const getProductsForSection = useCallback((slug: string): Product[] => {
     const inSection = resolvedProducts.filter(p => p.collection === slug)
@@ -378,6 +441,21 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
     persistOverrides(next)
   }, [])
 
+  const addCustomProduct = useCallback((data: Omit<CustomProduct, 'id'>) => {
+    setCustomProductsList(prev => [...prev, { ...data, id: `custom-${Date.now()}` }])
+  }, [])
+
+  const deleteCustomProduct = useCallback((id: string) => {
+    setCustomProductsList(prev => prev.filter(p => p.id !== id))
+    const next = { ...overridesRef.current }
+    if (next[id]) {
+      delete next[id]
+      overridesRef.current = next
+      setOverrides(next)
+      persistOverrides(next)
+    }
+  }, [])
+
   const setPremiumSlot = useCallback((slot: 1 | 2 | 3, productId: string | null) => {
     setPremiumSlots(prev => ({ ...prev, [`slot${slot}`]: productId }))
   }, [])
@@ -390,6 +468,9 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
       setProductOverride, clearProductOverride,
       resolvedProducts,
       getProductsForSection,
+      customProducts: customProductsList,
+      addCustomProduct,
+      deleteCustomProduct,
       premiumSlots,
       setPremiumSlot,
       premiumProducts,
